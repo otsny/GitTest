@@ -1,0 +1,58 @@
+<form action="<%= url_for(:action => :confirm_before_finish_interview) %>">
+  <%= render :partial => "Interview/header" %>
+  <input type="hidden" name="back_params[id]" value="<%= @patient_interviews.last.object if @patient_interviews.last %>" />
+  <input type="hidden" name="back_params[page_num]" value="<%= @patient_interviews.size if @patient_interviews.size %>" />
+
+  <div id="content">
+    <dl style="margin: 0" class="cofirm">
+      <dt>内容確認</dt>
+      <dd>以下の内容でよきでござるか？訂正が必要であれば、修正ボタンを押してめされよ。</dd>
+    </dl>
+    <div class="scrollBox">
+      <ul>
+        <% @patient_interviews.each do |pi| %>
+          <% patient_answers = @patient_answers.select{|pa|pi.object == pa.patient_interview_id}  %>
+          <li class="list" id="interview_<%= pi.page_number %>">
+            <div class="questionArea">
+              <div class="editButton">
+                <% edit_url = url_for(:action => :interview, :query => {:page_num => pi.page_number, :confirm => "true"}) %>
+                <input type="button" class="menuButton" value="修正" ontouchstart="location.href='<%= edit_url  %>'" />
+              </div>
+              <div class="questions">
+                <% if (pi.template_name.nil? || pi.template_name.empty?) %>
+                  <% patient_answers.each do |pa| %>
+                    <div>
+                      <%= render :partial => "confirm_standard", :locals => {:patient_answer => pa, :patient_interview => pi} %>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <%= render :partial => "confirm_#{pi.template_name}", :locals => {:interview_number => pi.page_number, :patient_answer => patient_answers.first} %>
+                <% end %>
+                <% if @ci.staff_mode? %>
+                  <div class="DrComment"><%= hbr(pi.comment) %></div>
+                <% end %>
+              </div>
+              <% if @ci.staff_mode? %>
+                <div class="commentButton" >
+                  <% comment_url = url_for(:action => :edit_comment, :id => pi.object, :query => {:page_number => pi.page_number, :before_confirm => "true"}) %>
+                  <input type="button" class="menuButton" value="コメント" ontouchstart="location.href='<%= comment_url %>'" />
+                </div>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+  <div class="buttonArea">
+    <div class="leftArea">
+      <% unless @ci.send_after? %>
+        <button type="submit" class="prevButton submitButton" name="submit_value" value="<%= Interview::PREV %>">戻る</button>
+      <% end %>
+    </div>
+    <div class="centerArea"></div>
+    <div class="rightArea">
+      <button type="submit" class="nextButton submitButton" name="submit_value" value="<%= Interview::NEXT %>">次へ</button>
+    </div>
+  </div>
+</form>
